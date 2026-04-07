@@ -111,6 +111,102 @@ class DecodeWorkerHandler(BaseWorkerHandler):
 
         return {k: v for k, v in param_mapping.items() if v is not None}
 
+    @staticmethod
+    def _parse_logprobs_count(value: Any) -> int | None:
+        if value is None or value == "":
+            return None
+        if isinstance(value, bool):
+            return 0 if value else None
+        try:
+            parsed = int(value)
+        except (TypeError, ValueError):
+            logging.warning("Ignoring invalid logprobs value: %r", value)
+            return None
+        if parsed < 0:
+            logging.warning("Ignoring negative logprobs value: %r", value)
+            return None
+        return parsed
+
+    def _build_generate_kwargs(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        if self.skip_tokenizer_init:
+            output_options = request.get("output_options", {})
+            requested_top_logprobs = self._parse_logprobs_count(
+                output_options.get("top_logprobs", output_options.get("logprobs"))
+            )
+        else:
+            requested_top_logprobs = None
+            if request.get("logprobs"):
+                requested_top_logprobs = (
+                    self._parse_logprobs_count(request.get("top_logprobs")) or 0
+                )
+
+        if requested_top_logprobs is None:
+            return {}
+
+        return {
+            "return_logprob": True,
+            "top_logprobs_num": requested_top_logprobs,
+        }
+
+    @staticmethod
+    def _format_top_logprobs(raw_top_logprobs: Any) -> list[dict[str, Any]]:
+        formatted: list[dict[str, Any]] = []
+        if not raw_top_logprobs:
+            return formatted
+
+        for rank, item in enumerate(raw_top_logprobs):
+            if not item:
+                continue
+
+            logprob = float(item[0]) if item[0] is not None else None
+            token_id = item[1] if len(item) > 1 else None
+            token = item[2] if len(item) > 2 else None
+            formatted.append(
+                {
+                    "rank": rank,
+                    "token_id": token_id,
+                    "token": token,
+                    "logprob": logprob,
+                    "bytes": list(token.encode("utf-8")) if token else None,
+                }
+            )
+
+        return formatted
+
+    @classmethod
+    def _extract_logprobs(
+        cls, meta_info: Dict[str, Any], num_new_tokens: int
+    ) -> tuple[list[float] | None, list[list[dict[str, Any]]] | None]:
+        if num_new_tokens <= 0:
+            return None, None
+
+        output_token_logprobs = meta_info.get("output_token_logprobs") or []
+        if not output_token_logprobs:
+            return None, None
+
+        if len(output_token_logprobs) > num_new_tokens:
+            output_token_logprobs = output_token_logprobs[-num_new_tokens:]
+
+        output_top_logprobs = meta_info.get("output_top_logprobs") or []
+        if output_top_logprobs and len(output_top_logprobs) > len(output_token_logprobs):
+            output_top_logprobs = output_top_logprobs[-len(output_token_logprobs):]
+
+        log_probs: list[float] = []
+        top_logprobs: list[list[dict[str, Any]]] = []
+
+        for idx, token_logprob in enumerate(output_token_logprobs):
+            if not token_logprob:
+                continue
+
+            log_probs.append(float(token_logprob[0]))
+            if output_top_logprobs:
+                top_logprobs.append(cls._format_top_logprobs(output_top_logprobs[idx]))
+
+        if not log_probs:
+            return None, None
+
+        return log_probs, top_logprobs if output_top_logprobs else None
+
     async def generate(
         self, request: Dict[str, Any], context: Context
     ) -> AsyncGenerator[Dict[str, Any], None]:
@@ -129,6 +225,7 @@ class DecodeWorkerHandler(BaseWorkerHandler):
         logging.debug(f"New Request ID: {context.id()}")
         trace_id = context.trace_id
         sampling_params = self._build_sampling_params(request)
+        generate_kwargs = self._build_generate_kwargs(request)
         input_param = self._get_input_param(request)
         return_routed_experts = getattr(
             self.config.server_args, "enable_return_routed_experts", False
@@ -168,6 +265,7 @@ class DecodeWorkerHandler(BaseWorkerHandler):
                 external_trace_header=trace_header,
                 rid=trace_id,
                 data_parallel_rank=dp_rank,
+                **generate_kwargs,
                 **self._priority_kwargs(priority),
             )
 
@@ -200,6 +298,7 @@ class DecodeWorkerHandler(BaseWorkerHandler):
                 external_trace_header=trace_header,
                 rid=trace_id,
                 data_parallel_rank=dp_rank,
+                **generate_kwargs,
                 **self._priority_kwargs(priority),
             )
             if self.skip_tokenizer_init:
@@ -260,6 +359,14 @@ class DecodeWorkerHandler(BaseWorkerHandler):
 
                 # Pass through disjoint token segments directly
                 out["token_ids"] = output_ids
+                log_probs, top_logprobs = self._extract_logprobs(
+                    res.get("meta_info", {}),
+                    len(output_ids),
+                )
+                if log_probs is not None:
+                    out["log_probs"] = log_probs
+                if top_logprobs is not None:
+                    out["top_logprobs"] = top_logprobs
                 routed_experts = res["meta_info"].get("routed_experts")
                 if routed_experts is not None:
                     # Base64-encode tensor bytes to match sglang's output format.
