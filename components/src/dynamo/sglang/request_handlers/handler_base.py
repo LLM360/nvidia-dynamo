@@ -857,6 +857,22 @@ class BaseWorkerHandler(LoraMixin, RLMixin, BaseGenerativeHandler[RequestT, Resp
             "num_paused_requests": num_paused_requests,
         }
 
+    async def init_weights_update_group(self, body: dict) -> dict:
+        """Initialize distributed weight-update NCCL group on the worker."""
+        from sglang.srt.managers.io_struct import InitWeightsUpdateGroupReqInput
+
+        req = InitWeightsUpdateGroupReqInput(**body)
+        success, message = await self.engine.tokenizer_manager.init_weights_update_group(req, None)
+        return {"success": success, "message": message}
+
+    async def destroy_weights_update_group(self, body: dict) -> dict:
+        """Destroy distributed weight-update NCCL group on the worker."""
+        from sglang.srt.managers.io_struct import DestroyWeightsUpdateGroupReqInput
+
+        req = DestroyWeightsUpdateGroupReqInput(**body)
+        success, message = await self.engine.tokenizer_manager.destroy_weights_update_group(req, None)
+        return {"success": success, "message": message}
+
     async def update_weights_from_tensor(self, body: dict) -> dict:
         """Update model weights from tensors without restarting the server."""
         from sglang.srt.managers.io_struct import UpdateWeightsFromTensorReqInput
@@ -980,6 +996,11 @@ class BaseWorkerHandler(LoraMixin, RLMixin, BaseGenerativeHandler[RequestT, Resp
             result = {"status": "error", "message": f"Unknown action: {action}"}
         yield result
 
+    async def get_weight_version(self, body: dict) -> dict:
+        """Return the active weight version currently served by the worker."""
+        _ = body
+        return {"weight_version": self.engine.tokenizer_manager.server_args.weight_version}
+
     def register_engine_routes(self, runtime: DistributedRuntime) -> None:
         """Register all engine routes for this handler.
 
@@ -993,6 +1014,12 @@ class BaseWorkerHandler(LoraMixin, RLMixin, BaseGenerativeHandler[RequestT, Resp
         )
         runtime.register_engine_route(
             "resume_memory_occupation", self.resume_memory_occupation
+        )
+        runtime.register_engine_route(
+            "init_weights_update_group", self.init_weights_update_group
+        )
+        runtime.register_engine_route(
+            "destroy_weights_update_group", self.destroy_weights_update_group
         )
         runtime.register_engine_route(
             "update_weights_from_disk", self.update_weights_from_disk
@@ -1009,6 +1036,7 @@ class BaseWorkerHandler(LoraMixin, RLMixin, BaseGenerativeHandler[RequestT, Resp
         runtime.register_engine_route(
             "update_weight_version", self.update_weight_version
         )
+        runtime.register_engine_route("get_weight_version", self.get_weight_version)
         if getattr(self.config, "dynamo_args", None) and getattr(
             self.config.dynamo_args, "enable_rl", False
         ):
