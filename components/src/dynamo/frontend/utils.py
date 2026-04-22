@@ -62,16 +62,16 @@ class FrontendRoundRobinRouter:
                 f"Unsupported kwargs for frontend round-robin router: {sorted(kwargs)}"
             )
 
-        async with self._lock:
-            instance_ids = list(self._client.instance_ids())
-            if not instance_ids:
-                instance_ids = list(await self._client.wait_for_instances())
-            if not instance_ids:
-                raise RuntimeError(
-                    f"No active backend instances available for {self._endpoint_name}"
-                )
+        instance_ids = list(self._client.instance_ids())
+        if not instance_ids:
+            instance_ids = list(await self._client.wait_for_instances())
+        if not instance_ids:
+            raise RuntimeError(
+                f"No active backend instances available for {self._endpoint_name}"
+            )
 
-            instance_ids = sorted(instance_ids)
+        instance_ids = sorted(instance_ids)
+        async with self._lock:
             instance_id = instance_ids[self._cursor % len(instance_ids)]
             self._cursor += 1
 

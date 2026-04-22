@@ -6,7 +6,7 @@ import pytest
 from dynamo.frontend.utils import FrontendRoundRobinRouter
 
 
-pytestmark = [pytest.mark.unit, pytest.mark.pre_merge]
+pytestmark = [pytest.mark.unit, pytest.mark.gpu_0, pytest.mark.pre_merge]
 
 
 class _FakeClient:
@@ -64,3 +64,26 @@ async def test_frontend_round_robin_router_waits_for_instances_when_empty():
     result = await router.generate({"seq": 0}, annotated=False)
 
     assert result["instance"] == "9"
+
+
+@pytest.mark.asyncio
+async def test_frontend_round_robin_router_raises_when_no_instances_ever_appear():
+    client = _FakeClient([[]])
+    client.wait_for_instances = lambda: _empty_instances()
+    router = FrontendRoundRobinRouter(client, "dynamo.backend.generate")
+
+    with pytest.raises(RuntimeError, match="No active backend instances available"):
+        await router.generate({"seq": 0}, annotated=False)
+
+
+@pytest.mark.asyncio
+async def test_frontend_round_robin_router_rejects_unexpected_kwargs():
+    client = _FakeClient([[1]])
+    router = FrontendRoundRobinRouter(client, "dynamo.backend.generate")
+
+    with pytest.raises(TypeError, match="Unsupported kwargs"):
+        await router.generate({"seq": 0}, annotated=False, foo=1)
+
+
+async def _empty_instances():
+    return []
