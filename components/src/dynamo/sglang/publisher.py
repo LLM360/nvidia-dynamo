@@ -115,6 +115,13 @@ class DynamoSglangPublisher:
                 "ZMQ socket setup. KV event publishing will still be configured."
             )
 
+    def _publish_worker_metrics(self, dp_rank: int, active_decode_blocks: int) -> None:
+        """Handle old and new WorkerMetricsPublisher.publish signatures."""
+        try:
+            self.metrics_publisher.publish(dp_rank, kv_used_blocks=active_decode_blocks)
+        except TypeError:
+            self.metrics_publisher.publish(dp_rank, active_decode_blocks)
+
     async def run(self) -> None:
         """Continuously receive scheduler metrics from ZMQ socket and publish them.
 
@@ -140,9 +147,7 @@ class DynamoSglangPublisher:
                     else self.dp_rank
                 )
                 active_decode_blocks = kv_metrics.kv_active_blocks
-                self.metrics_publisher.publish(
-                    dp_rank, kv_used_blocks=active_decode_blocks
-                )
+                self._publish_worker_metrics(dp_rank, active_decode_blocks)
                 dp_rank_str = str(dp_rank)
                 # Publish total blocks (always available in KvMetrics)
                 self.component_gauges.set_total_blocks(
@@ -187,7 +192,7 @@ class DynamoSglangPublisher:
     def init_engine_metrics_publish(self) -> None:
         """Publish initial dummy metrics to bootstrap the metrics endpoint."""
         logging.info("Sending dummy metrics to initialize")
-        self.metrics_publisher.publish(self.dp_rank, kv_used_blocks=0)
+        self._publish_worker_metrics(self.dp_rank, 0)
         dp_rank_str = str(self.dp_rank)
         self.component_gauges.set_total_blocks(dp_rank_str, 0)
         self.component_gauges.set_gpu_cache_usage(dp_rank_str, 0.0)
