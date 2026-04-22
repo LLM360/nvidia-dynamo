@@ -59,9 +59,43 @@ def test_extract_logprobs_from_meta_info():
             ],
         },
         2,
+        0,
     )
 
     assert log_probs == [-0.25, -0.5]
     assert top_logprobs is not None
     assert top_logprobs[0][0]["token"] == " hello"
     assert top_logprobs[0][0]["bytes"] == list(" hello".encode("utf-8"))
+
+
+def test_extract_logprobs_uses_start_offset_for_streaming_chunks():
+    log_probs, top_logprobs = DecodeWorkerHandler._extract_logprobs(
+        {
+            "output_token_logprobs": [
+                [-0.1, 10, " a"],
+                [-0.2, 11, " b"],
+                [-0.3, 12, " c"],
+            ],
+            "output_top_logprobs": [
+                [[-0.1, 10, " a"]],
+                [[-0.2, 11, " b"]],
+                [[-0.3, 12, " c"]],
+            ],
+        },
+        1,
+        1,
+    )
+
+    assert log_probs == [-0.2]
+    assert top_logprobs == [[{"rank": 0, "token_id": 11, "token": " b", "logprob": -0.2, "bytes": list(" b".encode("utf-8"))}]]
+
+
+def test_extract_logprobs_returns_none_when_offset_exceeds_available_entries():
+    log_probs, top_logprobs = DecodeWorkerHandler._extract_logprobs(
+        {"output_token_logprobs": [[-0.25, 11, " hello"]]},
+        1,
+        5,
+    )
+
+    assert log_probs is None
+    assert top_logprobs is None
