@@ -12,8 +12,16 @@ def test_normalize_finish_reason_wraps_bare_error():
     assert normalize_finish_reason("error") == {"error": "backend error"}
 
 
-def test_normalize_finish_reason_extracts_error_payload():
-    assert normalize_finish_reason("error: timeout") == {"error": "timeout"}
+@pytest.mark.parametrize(
+    ("finish_reason", "expected"),
+    [
+        ("error: timeout", "timeout"),
+        ("error:", "backend error"),
+        ("error:   ", "backend error"),
+    ],
+)
+def test_normalize_finish_reason_extracts_error_payload(finish_reason, expected):
+    assert normalize_finish_reason(finish_reason) == {"error": expected}
 
 
 def test_normalize_finish_reason_preserves_non_error_values():

@@ -4,10 +4,12 @@
 """Utilities for engine response processing."""
 
 import logging
-from typing import Any
+from typing import Optional
+
+NormalizedFinishReason = str | dict[str, str] | None
 
 
-def normalize_finish_reason(finish_reason: str) -> Any:
+def normalize_finish_reason(finish_reason: Optional[str]) -> NormalizedFinishReason:
     """
     Normalize engine finish reasons to Dynamo-compatible values.
 
