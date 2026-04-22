@@ -52,3 +52,21 @@ async def test_get_weight_version_reads_active_version_from_server_args():
     result = await handler.get_weight_version({})
 
     assert result == {"weight_version": 17}
+
+
+@pytest.mark.asyncio
+async def test_weight_update_routes_return_unsupported_without_engine():
+    handler = _DummyWorkerHandler.__new__(_DummyWorkerHandler)
+    handler.engine = None
+
+    init_result = await handler.init_weights_update_group({})
+    destroy_result = await handler.destroy_weights_update_group({})
+    version_result = await handler.get_weight_version({})
+
+    expected = {
+        "success": False,
+        "message": "weight update control not supported on this worker",
+    }
+    assert init_result == expected
+    assert destroy_result == expected
+    assert version_result == expected

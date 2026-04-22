@@ -24,6 +24,10 @@ from typing import (
 )
 
 import sglang as sgl
+from sglang.srt.managers.io_struct import (
+    DestroyWeightsUpdateGroupReqInput,
+    InitWeightsUpdateGroupReqInput,
+)
 
 from dynamo._core import Context
 from dynamo.common.utils.input_params import InputParamManager
@@ -733,6 +737,12 @@ class BaseWorkerHandler(LoraMixin, RLMixin, BaseGenerativeHandler[RequestT, Resp
             return {"priority": normalized}
         return {}
 
+    def _weight_update_unsupported_response(self) -> dict:
+        return {
+            "success": False,
+            "message": "weight update control not supported on this worker",
+        }
+
     async def release_memory_occupation(self, body: dict) -> dict:
         """Release GPU memory occupation and unregister from discovery.
 
@@ -859,18 +869,24 @@ class BaseWorkerHandler(LoraMixin, RLMixin, BaseGenerativeHandler[RequestT, Resp
 
     async def init_weights_update_group(self, body: dict) -> dict:
         """Initialize distributed weight-update NCCL group on the worker."""
-        from sglang.srt.managers.io_struct import InitWeightsUpdateGroupReqInput
+        if self.engine is None:
+            return self._weight_update_unsupported_response()
 
         req = InitWeightsUpdateGroupReqInput(**body)
-        success, message = await self.engine.tokenizer_manager.init_weights_update_group(req, None)
+        success, message = await self.engine.tokenizer_manager.init_weights_update_group(
+            req, None
+        )
         return {"success": success, "message": message}
 
     async def destroy_weights_update_group(self, body: dict) -> dict:
         """Destroy distributed weight-update NCCL group on the worker."""
-        from sglang.srt.managers.io_struct import DestroyWeightsUpdateGroupReqInput
+        if self.engine is None:
+            return self._weight_update_unsupported_response()
 
         req = DestroyWeightsUpdateGroupReqInput(**body)
-        success, message = await self.engine.tokenizer_manager.destroy_weights_update_group(req, None)
+        success, message = (
+            await self.engine.tokenizer_manager.destroy_weights_update_group(req, None)
+        )
         return {"success": success, "message": message}
 
     async def update_weights_from_tensor(self, body: dict) -> dict:
@@ -999,7 +1015,11 @@ class BaseWorkerHandler(LoraMixin, RLMixin, BaseGenerativeHandler[RequestT, Resp
     async def get_weight_version(self, body: dict) -> dict:
         """Return the active weight version currently served by the worker."""
         _ = body
-        return {"weight_version": self.engine.tokenizer_manager.server_args.weight_version}
+        if self.engine is None:
+            return self._weight_update_unsupported_response()
+        return {
+            "weight_version": self.engine.tokenizer_manager.server_args.weight_version
+        }
 
     def register_engine_routes(self, runtime: DistributedRuntime) -> None:
         """Register all engine routes for this handler.
