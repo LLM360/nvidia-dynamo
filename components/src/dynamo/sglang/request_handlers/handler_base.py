@@ -23,7 +23,11 @@ import sglang as sgl
 from dynamo._core import Context
 from dynamo.common.utils.input_params import InputParamManager
 from dynamo.llm import KvEventPublisher, WorkerMetricsPublisher
-from dynamo.llm.exceptions import EngineShutdown
+try:
+    from dynamo.llm.exceptions import EngineShutdown
+except ImportError:
+    class EngineShutdown(Exception):
+        pass
 from dynamo.runtime import DistributedRuntime
 from dynamo.sglang._compat import NetworkAddress, get_local_ip_auto
 from dynamo.sglang.args import Config

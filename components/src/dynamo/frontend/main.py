@@ -18,6 +18,7 @@
 
 import argparse
 import asyncio
+import inspect
 import logging
 import os
 import signal
@@ -29,7 +30,6 @@ import uvloop
 
 from dynamo.common.config_dump import dump_config
 from dynamo.llm import (
-    AicPerfConfig,
     EngineType,
     EntrypointArgs,
     KvRouterConfig,
@@ -40,6 +40,11 @@ from dynamo.llm import (
 )
 from dynamo.runtime import DistributedRuntime
 from dynamo.runtime.logging import configure_dynamo_logging
+
+try:
+    from dynamo.llm import AicPerfConfig
+except ImportError:
+    AicPerfConfig = None
 
 from .frontend_args import FrontendArgGroup, FrontendConfig
 
@@ -233,7 +238,11 @@ async def async_main():
 
     if config.router_mode == "kv":
         router_mode = RouterMode.KV
-        kv_router_config = KvRouterConfig(**config.kv_router_kwargs())
+        kv_kwargs = config.kv_router_kwargs()
+        kv_router_param_names = set(inspect.signature(KvRouterConfig).parameters)
+        kv_router_config = KvRouterConfig(
+            **{k: v for k, v in kv_kwargs.items() if k in kv_router_param_names}
+        )
     elif config.router_mode == "random":
         router_mode = RouterMode.Random
         kv_router_config = None
@@ -251,13 +260,21 @@ async def async_main():
         kv_router_config = None
 
     os.environ[MIN_INITIAL_WORKERS_ENV] = str(config.min_initial_workers)
+    router_kwargs: dict[str, Any] = {
+        "active_decode_blocks_threshold": config.active_decode_blocks_threshold,
+        "active_prefill_tokens_threshold": config.active_prefill_tokens_threshold,
+        "active_prefill_tokens_threshold_frac": config.active_prefill_tokens_threshold_frac,
+    }
+    router_params = inspect.signature(RouterConfig).parameters
+    if "enforce_disagg" in router_params:
+        router_kwargs["enforce_disagg"] = config.enforce_disagg
+    elif "decode_fallback" in router_params:
+        router_kwargs["decode_fallback"] = not config.enforce_disagg
+
     router_config = RouterConfig(
         router_mode,
         kv_router_config,
-        active_decode_blocks_threshold=config.active_decode_blocks_threshold,
-        active_prefill_tokens_threshold=config.active_prefill_tokens_threshold,
-        active_prefill_tokens_threshold_frac=config.active_prefill_tokens_threshold_frac,
-        enforce_disagg=config.enforce_disagg,
+        **router_kwargs,
     )
     kwargs: dict[str, Any] = {
         "http_host": config.http_host,
@@ -315,6 +332,11 @@ async def async_main():
         kwargs["chat_engine_factory"] = chat_engine_factory
 
     if config.router_prefill_load_model == "aic":
+        if AicPerfConfig is None:
+            raise RuntimeError(
+                "router_prefill_load_model=aic requires a runtime build that exports "
+                "dynamo.llm.AicPerfConfig"
+            )
         kwargs["aic_perf_config"] = AicPerfConfig(**config.aic_perf_kwargs())
 
     e = EntrypointArgs(EngineType.Dynamic, **kwargs)
