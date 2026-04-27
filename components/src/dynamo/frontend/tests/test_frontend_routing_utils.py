@@ -5,7 +5,6 @@ import pytest
 
 from dynamo.frontend.utils import FrontendRoundRobinRouter
 
-
 pytestmark = [pytest.mark.unit, pytest.mark.gpu_0, pytest.mark.pre_merge]
 
 
@@ -69,7 +68,7 @@ async def test_frontend_round_robin_router_waits_for_instances_when_empty():
 @pytest.mark.asyncio
 async def test_frontend_round_robin_router_raises_when_no_instances_ever_appear():
     client = _FakeClient([[]])
-    client.wait_for_instances = lambda: _empty_instances()
+    client.wait_for_instances = _empty_instances
     router = FrontendRoundRobinRouter(client, "dynamo.backend.generate")
 
     with pytest.raises(RuntimeError, match="No active backend instances available"):
