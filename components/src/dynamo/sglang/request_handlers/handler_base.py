@@ -873,9 +873,10 @@ class BaseWorkerHandler(LoraMixin, RLMixin, BaseGenerativeHandler[RequestT, Resp
             return self._weight_update_unsupported_response()
 
         req = InitWeightsUpdateGroupReqInput(**body)
-        success, message = await self.engine.tokenizer_manager.init_weights_update_group(
-            req, None
-        )
+        (
+            success,
+            message,
+        ) = await self.engine.tokenizer_manager.init_weights_update_group(req, None)
         return {"success": success, "message": message}
 
     async def destroy_weights_update_group(self, body: dict) -> dict:
@@ -884,9 +885,10 @@ class BaseWorkerHandler(LoraMixin, RLMixin, BaseGenerativeHandler[RequestT, Resp
             return self._weight_update_unsupported_response()
 
         req = DestroyWeightsUpdateGroupReqInput(**body)
-        success, message = (
-            await self.engine.tokenizer_manager.destroy_weights_update_group(req, None)
-        )
+        (
+            success,
+            message,
+        ) = await self.engine.tokenizer_manager.destroy_weights_update_group(req, None)
         return {"success": success, "message": message}
 
     async def update_weights_from_tensor(self, body: dict) -> dict:
