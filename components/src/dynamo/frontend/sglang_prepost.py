@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 #   (tool_choice="required" or named function)
 ToolCallParserType: TypeAlias = FunctionCallParser | JsonArrayParser
 
+
 @dataclass
 class SglangPreprocessResult:
     """Result of SGLang preprocessing."""

@@ -288,7 +288,6 @@ class DecodeWorkerHandler(BaseWorkerHandler):
         logging.debug(f"New Request ID: {context.id()}")
         trace_id = context.trace_id
         sampling_params = self._build_sampling_params(request)
-        generate_kwargs = self._build_generate_kwargs(request)
         input_param = self._get_input_param(request)
         return_routed_experts = getattr(
             self.config.server_args, "enable_return_routed_experts", False

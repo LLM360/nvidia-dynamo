@@ -39,11 +39,10 @@ def test_extract_media_urls_returns_none_for_missing_or_invalid_items():
     )
 
 
-def test_build_generate_kwargs_token_request_uses_output_options_logprobs():
-    handler = DecodeWorkerHandler.__new__(DecodeWorkerHandler)
-    handler.skip_tokenizer_init = True
-
-    assert handler._build_generate_kwargs({"output_options": {"logprobs": 3}}) == {
+def test_build_logprob_kwargs_token_request_uses_output_options_logprobs():
+    assert DecodeWorkerHandler._build_logprob_kwargs(
+        {"output_options": {"logprobs": 3}}
+    ) == {
         "return_logprob": True,
         "top_logprobs_num": 3,
     }
@@ -87,7 +86,17 @@ def test_extract_logprobs_uses_start_offset_for_streaming_chunks():
     )
 
     assert log_probs == [-0.2]
-    assert top_logprobs == [[{"rank": 0, "token_id": 11, "token": " b", "logprob": -0.2, "bytes": list(" b".encode("utf-8"))}]]
+    assert top_logprobs == [
+        [
+            {
+                "rank": 0,
+                "token_id": 11,
+                "token": " b",
+                "logprob": -0.2,
+                "bytes": list(" b".encode("utf-8")),
+            }
+        ]
+    ]
 
 
 def test_extract_logprobs_returns_none_when_offset_exceeds_available_entries():
