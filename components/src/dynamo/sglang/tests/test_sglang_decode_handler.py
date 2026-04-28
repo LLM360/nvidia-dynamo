@@ -57,8 +57,8 @@ def test_extract_logprobs_from_meta_info():
                 [[-0.5, 12, " world"]],
             ],
         },
-        2,
         0,
+        2,
     )
 
     assert log_probs == [-0.25, -0.5]
