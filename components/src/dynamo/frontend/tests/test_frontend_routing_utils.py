@@ -24,9 +24,13 @@ class _FakeClient:
     async def wait_for_instances(self):
         return [9, 10]
 
-    async def direct(self, request, instance):
-        self.direct_calls.append((request, instance))
-        return {"instance": instance, "request": request}
+    async def direct(self, request, instance_id, annotated=True):
+        self.direct_calls.append((request, instance_id, annotated))
+        return {
+            "instance": str(instance_id),
+            "request": request,
+            "annotated": annotated,
+        }
 
 
 @pytest.mark.asyncio
@@ -39,6 +43,7 @@ async def test_frontend_round_robin_router_balances_sorted_instance_ids():
         results.append(await router.generate({"seq": idx}, annotated=False))
 
     assert [item["instance"] for item in results] == ["10", "20", "30", "10"]
+    assert [call[2] for call in client.direct_calls] == [False, False, False, False]
 
 
 @pytest.mark.asyncio

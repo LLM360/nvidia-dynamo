@@ -84,7 +84,11 @@ class FrontendRoundRobinRouter:
                 annotated,
             )
 
-        return await self._client.direct(request, instance=str(instance_id))
+        return await self._client.direct(
+            request,
+            instance_id=instance_id,
+            annotated=annotated,
+        )
 
 
 # Content part types that carry media URLs, mapped to the key used in the
