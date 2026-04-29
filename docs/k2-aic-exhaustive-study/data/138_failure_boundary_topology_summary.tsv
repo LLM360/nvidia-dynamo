@@ -1,0 +1,3 @@
+topology	total_points	candidate_points	no_results_points	candidate_ratio	no_results_ratio	supported_points	unsupported_single_node_disagg_points	failed_nonwideep_tp_dp_guard_points
+agg	5100	4845	255	0.9500	0.0500	4845	0	255
+disagg	5100	4560	540	0.8941	0.1059	4560	285	255

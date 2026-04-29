@@ -1,0 +1,10 @@
+metric	value	notes
+source_catalog_count	2	Merged safe derived catalogs from the additive sweep and intermediate-node backfill.
+unique_topology_rows	10200	Each topology row is one workload-profile, node-count, and batch cell for agg or disagg.
+unique_boundary_cells	5100	Each boundary cell collapses agg and disagg into one workload-profile, node-count, and batch point.
+supported_both_cells	4560	Both agg and disagg emitted candidates.
+unsupported_disagg_cells	285	Agg succeeded but disagg emitted no CSV on single-node runs.
+failed_both_cells	255	Both topologies land in the non-wideep SGLang TP>1 and DP>1 guard path.
+supported_both_ratio	0.8941	Share of merged boundary cells that are fully supported.
+unsupported_disagg_ratio	0.0559	Share of merged boundary cells in the single-node disagg-only unsupported region.
+failed_both_ratio	0.0500	Share of merged boundary cells in the hard failure region.

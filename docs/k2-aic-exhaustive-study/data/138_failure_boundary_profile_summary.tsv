@@ -1,0 +1,21 @@
+workload_profile	profile_family	profile_tier	summary_label	profile_isl	profile_osl	profile_context_budget	context_budget_label	total_cells	supported_both_cells	unsupported_disagg_cells	failed_both_cells	supported_both_ratio	unsupported_disagg_ratio	failed_both_ratio
+balanced_1k	balanced_pow2	balanced_pow2	Balanced 1K	512	512	1024	1K	255	240	15	0	0.9412	0.0588	0.0000
+observed_low_0p5k_1k	issue_preserved	observed_practical	0.5K / 1K	512	1024	1536	1.5K	255	240	15	0	0.9412	0.0588	0.0000
+balanced_2k	balanced_pow2	balanced_pow2	Balanced 2K	1024	1024	2048	2K	255	240	15	0	0.9412	0.0588	0.0000
+observed_mean_1p5k_1k	issue_preserved	observed_practical	1.5K / 1K	1536	1024	2560	2.5K	255	240	15	0	0.9412	0.0588	0.0000
+balanced_4k	balanced_pow2	balanced_pow2	Balanced 4K	2048	2048	4096	4K	255	240	15	0	0.9412	0.0588	0.0000
+chat_4k_500	issue_preserved	legacy_chat	Chat 4K / 500	4000	500	4500	4500	255	240	15	0	0.9412	0.0588	0.0000
+balanced_8k	balanced_pow2	balanced_pow2	Balanced 8K	4096	4096	8192	8K	255	240	15	0	0.9412	0.0588	0.0000
+observed_high_7k_1k	issue_preserved	observed_practical	7K / 1K	7168	1024	8192	8K	255	240	15	0	0.9412	0.0588	0.0000
+balanced_16k	balanced_pow2	balanced_pow2	Balanced 16K	8192	8192	16384	16K	255	240	15	0	0.9412	0.0588	0.0000
+balanced_32k	balanced_pow2	balanced_pow2	Balanced 32K	16384	16384	32768	32K	255	240	15	0	0.9412	0.0588	0.0000
+practical_32k_8k	issue_preserved	practical_rl	32K / 8K	32768	8192	40960	40K	255	240	15	0	0.9412	0.0588	0.0000
+balanced_64k	balanced_pow2	balanced_pow2	Balanced 64K	32768	32768	65536	64K	255	240	15	0	0.9412	0.0588	0.0000
+practical_64k_8k	issue_preserved	practical_rl	64K / 8K	65536	8192	73728	72K	255	240	15	0	0.9412	0.0588	0.0000
+balanced_128k	balanced_pow2	balanced_pow2	Balanced 128K	65536	65536	131072	128K	255	240	15	0	0.9412	0.0588	0.0000
+stress_128k	issue_preserved	stress_rl	128K profile	114688	16384	131072	128K	255	240	15	0	0.9412	0.0588	0.0000
+observed_low_0p5k_128k	issue_preserved	observed_stress	0.5K / 128K	512	131072	131584	128.5K	255	240	15	0	0.9412	0.0588	0.0000
+observed_mean_1p5k_128k	issue_preserved	observed_stress	1.5K / 128K	1536	131072	132608	129.5K	255	240	15	0	0.9412	0.0588	0.0000
+observed_high_7k_128k	issue_preserved	observed_stress	7K / 128K	7168	131072	138240	135K	255	240	15	0	0.9412	0.0588	0.0000
+balanced_256k	balanced_pow2	balanced_pow2	Balanced 256K	131072	131072	262144	256K	255	240	15	0	0.9412	0.0588	0.0000
+stress_256k	issue_preserved	stress_rl	256K profile	229376	32768	262144	256K	255	0	0	255	0.0000	0.0000	1.0000
