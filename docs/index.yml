@@ -183,6 +183,8 @@ navigation:
             path: fault-tolerance/testing.md
       - page: Benchmarking
         path: benchmarks/benchmarking.md
+      - page: K2 AIC Coverage Feasibility
+        path: k2-aic-exhaustive-study/sections/118-coverage-feasibility.md
       - section: Mocker
         contents:
           - page: Testing with Mocker
