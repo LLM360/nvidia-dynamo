@@ -1,0 +1,7 @@
+scope_type	scope	comparisons	disagg_cluster_wins	agg_cluster_wins	disagg_cluster_win_rate	disagg_allocated_gpu_efficiency_wins	disagg_allocated_gpu_efficiency_win_rate	disagg_selected_gpu_efficiency_wins	disagg_selected_gpu_efficiency_win_rate	geometric_mean_cluster_ratio	median_cluster_ratio	max_cluster_ratio	node_count_at_max_ratio	min_cluster_ratio	node_count_at_min_ratio	median_disagg_selected_gpu_fraction
+workload_profile	practical_32k_8k	9	3	6	0.333	3	0.333	3	0.333	0.394	0.660	1.422	8	0.041	512	0.984
+workload_profile	practical_64k_8k	9	0	9	0.000	0	0.000	0	0.000	0.202	0.310	0.870	8	0.019	512	0.988
+workload_profile	stress_128k_16k	9	1	8	0.111	1	0.111	2	0.222	0.278	0.456	1.057	8	0.028	512	0.984
+workload_tier	practical_rl	18	3	15	0.167	3	0.167	3	0.167	0.282	0.413	1.422	8	0.019	512	0.984
+workload_tier	stress_rl	9	1	8	0.111	1	0.111	2	0.222	0.278	0.456	1.057	8	0.028	512	0.984
+overall	all_rl_profiles	27	4	23	0.148	4	0.148	5	0.185	0.281	0.456	1.422	8	0.019	512	0.984

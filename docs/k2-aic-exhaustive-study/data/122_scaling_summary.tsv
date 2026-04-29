@@ -1,0 +1,7 @@
+workload_profile	workload_tier	topology	baseline_node_count	baseline_cluster_tokens_s	peak_node_count	peak_cluster_tokens_s	peak_vs_baseline_ratio	final_node_count	final_cluster_tokens_s	final_vs_baseline_ratio	final_vs_peak_ratio	peak_selected_gpu_fraction	final_selected_gpu_fraction	scale_vs_agg_1n_at_peak
+practical_32k_8k	practical_rl	agg	1	732.727	512	375156.224	512.000	512	375156.224	512.000	1.000	1.000	1.000	512.000
+practical_32k_8k	practical_rl	disagg	2	1190.789	16	15480.259	13.000	512	15480.259	13.000	1.000	0.875	0.984	21.127
+practical_64k_8k	practical_rl	agg	1	507.713	512	259949.056	512.000	512	259949.056	512.000	1.000	1.000	1.000	512.000
+practical_64k_8k	practical_rl	disagg	2	504.955	16	5042.995	9.987	512	5042.995	9.987	1.000	0.688	0.988	9.933
+stress_128k_16k	stress_rl	agg	1	349.452	512	178919.424	512.000	512	178919.424	512.000	1.000	1.000	1.000	512.000
+stress_128k_16k	stress_rl	disagg	2	422.052	16	5094.769	12.071	512	5064.622	12.000	0.994	0.875	0.990	14.579
