@@ -4,7 +4,6 @@
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Notify;
-use tokio::sync::mpsc::Sender;
 use tokio::task::JoinHandle;
 
 use anyhow::Context as _;
@@ -76,7 +75,7 @@ pub struct ModelWatcher {
     migration_limit: u32,
     migration_max_seq_len: Option<u32>,
     notify_on_model: Notify,
-    model_update_tx: Option<Sender<ModelUpdate>>,
+    model_update_callback: Option<Arc<dyn Fn(ModelUpdate) + Send + Sync>>,
     chat_engine_factory: Option<ChatEngineFactoryCallback>,
     prefill_load_estimator: Option<Arc<dyn PrefillLoadEstimator>>,
     metrics: Arc<Metrics>,
@@ -160,7 +159,7 @@ impl ModelWatcher {
             migration_limit,
             migration_max_seq_len,
             notify_on_model: Notify::new(),
-            model_update_tx: None,
+            model_update_callback: None,
             chat_engine_factory,
             prefill_load_estimator,
             metrics,
@@ -170,8 +169,8 @@ impl ModelWatcher {
         }
     }
 
-    pub fn set_notify_on_model_update(&mut self, tx: Sender<ModelUpdate>) {
-        self.model_update_tx = Some(tx);
+    pub fn set_notify_on_model_update(&mut self, callback: Arc<dyn Fn(ModelUpdate) + Send + Sync>) {
+        self.model_update_callback = Some(callback);
     }
 
     /// Wait until we have at least one chat completions model and return it's name.
@@ -444,12 +443,12 @@ impl ModelWatcher {
         // No instances remain anywhere — remove the entire Model
         let _ = self.manager.remove_model(&model_name);
 
-        if let Some(tx) = &self.model_update_tx {
+        if let Some(callback) = &self.model_update_callback {
             for model_type in ALL_MODEL_TYPES {
                 if card.model_type.intersects(*model_type)
                     && is_model_type_list_empty(&self.manager, *model_type)
                 {
-                    tx.send(ModelUpdate::Removed(card.clone())).await.ok();
+                    callback(ModelUpdate::Removed(card.clone()));
                 }
             }
         }
@@ -1017,8 +1016,8 @@ impl ModelWatcher {
             self.manager
                 .add_worker_set(card.name(), &ws_key, worker_set);
 
-            if let Some(tx) = &self.model_update_tx {
-                tx.send(ModelUpdate::Added(card.clone())).await.ok();
+            if let Some(callback) = &self.model_update_callback {
+                callback(ModelUpdate::Added(card.clone()));
             }
 
             // Note: activate_prefill_router is keyed by deployment namespace (not ws_key)
@@ -1055,8 +1054,8 @@ impl ModelWatcher {
         self.manager
             .add_worker_set(card.name(), &ws_key, worker_set);
 
-        if let Some(tx) = &self.model_update_tx {
-            tx.send(ModelUpdate::Added(card.clone())).await.ok();
+        if let Some(callback) = &self.model_update_callback {
+            callback(ModelUpdate::Added(card.clone()));
         }
 
         Ok(())
